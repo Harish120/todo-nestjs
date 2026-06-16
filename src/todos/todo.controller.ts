@@ -9,11 +9,28 @@ import {
   Post,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { TodoService } from './todo.service';
 import { CreateTodoDto } from './dtos/create-todo.dto';
 import { UpdateTodoDto } from './dtos/update-todo.dto';
+import { AuthGuard } from '../common/guards/auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { Todo } from './entities/todo.entity';
+
+/**
+ * TodoController
+ *
+ * Guard Strategy:
+ * - GET routes (findAll, findOne): PUBLIC - no guard needed
+ * - POST route (create): PROTECTED - requires valid token
+ * - PATCH route (update): PROTECTED - requires valid token
+ * - DELETE route (remove): PROTECTED - requires valid token
+ *
+ * Why?
+ * Users can read todos without authentication.
+ * Only authenticated users can create, update, or delete todos.
+ */
 
 /**
  * TodoController
@@ -36,21 +53,33 @@ export class TodoController {
   }
 
   @Post()
-  create(@Body() createTodoDto: CreateTodoDto): Todo {
+  @UseGuards(AuthGuard)
+  create(
+    @Body() createTodoDto: CreateTodoDto,
+    @CurrentUser() user: any,
+  ): Todo {
+    // Guard ensures user is authenticated
+    // @CurrentUser() gives us the user object from request
+    console.log(`User ${user.username} creating todo`);
     return this.todoService.create(createTodoDto);
   }
 
   @Patch(':id')
+  @UseGuards(AuthGuard)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateTodoDto: UpdateTodoDto,
+    @CurrentUser() user: any,
   ): Todo {
+    console.log(`User ${user.username} updating todo ${id}`);
     return this.todoService.update(id, updateTodoDto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id', ParseIntPipe) id: number): void {
+  @UseGuards(AuthGuard)
+  remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any): void {
+    console.log(`User ${user.username} deleting todo ${id}`);
     return this.todoService.remove(id);
   }
 }
