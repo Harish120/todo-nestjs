@@ -1,0 +1,7 @@
+export class ErrorResponse {
+  statusCode: number;
+  message: string;
+  error: string;
+  timestamp: string;
+  path?: string;
+}
